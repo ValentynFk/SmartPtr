@@ -172,13 +172,13 @@ void *old_shared_ptr_to_raw_ptr(old_shared_ptr_t *shared_ptr)
 }
 
 // Shared pointer copying
-shared_ptr_t *shared_ptr_copy(shared_ptr_t *shared_ptr)
+shared_ptr_t *shared_ptr_copy(old_shared_ptr_t *shared_ptr)
 {
     if (shared_ptr == NULL)
     {
         return NULL;
     }
-    shared_ptr_t *copy = malloc(sizeof(shared_ptr_t));
+    shared_ptr_t *copy = malloc(sizeof(old_shared_ptr_t));
     copy -> target = shared_ptr -> target;
     copy -> cb = shared_ptr -> cb;
     ++(shared_ptr -> cb -> ref_count);
@@ -186,7 +186,7 @@ shared_ptr_t *shared_ptr_copy(shared_ptr_t *shared_ptr)
 }
 
 // Shared pointer degradation
-void *shared_ptr_to_raw_ptr(shared_ptr_t *shared_ptr)
+void *shared_ptr_to_raw_ptr(old_shared_ptr_t *shared_ptr)
 {
     if (shared_ptr == NULL)
     {
