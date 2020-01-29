@@ -5,19 +5,22 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+typedef void (*dealloc_handler_t)(void *);
+typedef void *(*alloc_handler_t)(const size_t);
+
 /* deprecated */
-struct old_control_block_t {
+typedef struct old_control_block_t {
     int ref_count;
     int weak_count;
     void (*dealloc_handler)(void *);
-} typedef old_control_block_t;
+} old_control_block_t;
 
-struct old_shared_ptr_t {
+typedef struct old_shared_ptr_t {
     void *target;
     old_control_block_t *cb;
-} typedef old_shared_ptr_t;
+} old_shared_ptr_t;
 
-old_shared_ptr_t *old_shared_ptr_from_raw_ptr(void *raw_ptr, void (*dealloc_handler)(void *));
+old_shared_ptr_t *old_shared_ptr_from_raw_ptr(void *raw_ptr, dealloc_handler_t dealloc_handler);
 int old_shared_ptr_clean(old_shared_ptr_t **shared_ptr);
 old_shared_ptr_t *old_shared_ptr_copy(old_shared_ptr_t *shared_ptr);
 void *old_shared_ptr_to_raw_ptr(old_shared_ptr_t *shared_ptr);

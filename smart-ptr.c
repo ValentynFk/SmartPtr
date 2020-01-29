@@ -7,8 +7,8 @@
 // TODO deveop solution for differentiating weak ptrs from shared ptrs
 // Shared pointer from scratch
 void *shared_ptr_alloc(const size_t len,
-        void *(*allocator)(const size_t),
-        void (*deallocator)(void *))
+        alloc_handler_t allocator,
+        dealloc_handler_t deallocator)
 {
     // Create the shared pointer using the allocator and deallocator of the object
     if (allocator == NULL || deallocator == NULL || !len) {
@@ -59,7 +59,7 @@ void weak_ptr_remove(void *ptr)
         return;
     }
    // No references left
-    void (*deallocator)(void *) = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
+    dealloc_handler_t deallocator = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
     deallocator(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *));
 }
 
@@ -107,12 +107,12 @@ void shared_ptr_free(void *ptr)
         return;
     }
     // No references left
-    void (*deallocator)(void *) = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
+    dealloc_handler_t deallocator = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
     deallocator(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *));
 }
 
 // Shared pointer initialization
-old_shared_ptr_t *old_shared_ptr_from_raw_ptr(void *raw_ptr, void (*dealloc_handler)(void *))
+old_shared_ptr_t *old_shared_ptr_from_raw_ptr(void *raw_ptr, dealloc_handler_t dealloc_handler)
 {
     if (raw_ptr == NULL)
     {
