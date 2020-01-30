@@ -1,5 +1,4 @@
-# Smart pointers implementation in C.</br>Currently implemented shared_ptr and weak_ptr
-</br></br>
+# Dangerous but efficient smart pointers C implementation</br>Currently implemented shared_ptr and weak_ptr</br>
 ## To build this on Linux, type:
 >$ git clone https://github.com/ValentynFk/SmartPtr.git</br>
 >$ cd SmartPtr</br>

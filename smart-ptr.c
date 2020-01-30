@@ -3,12 +3,13 @@
 #include <stdbool.h>
 #include "smart-ptr.h"
 
+
+
 #define GET_PTR_REF(type, ptr) (*((type *)(ptr)))
-// TODO deveop solution for differentiating weak ptrs from shared ptrs
 // Shared pointer from scratch
-void *shared_ptr_alloc(const size_t len,
-        void *(*allocator)(const size_t),
-        void (*deallocator)(void *))
+static void *shared_ptr_alloc(const size_t len,
+        alloc_handler_t allocator,
+        dealloc_handler_t deallocator)
 {
     // Create the shared pointer using the allocator and deallocator of the object
     if (allocator == NULL || deallocator == NULL || !len) {
@@ -25,7 +26,7 @@ void *shared_ptr_alloc(const size_t len,
 }
 
 // Shared pointer copying
-void *shared_ptr_copy(void *ptr)
+static void *shared_ptr_copy(void *ptr)
 {
     if (ptr == NULL) {
         return NULL;
@@ -35,7 +36,7 @@ void *shared_ptr_copy(void *ptr)
     return ptr;
 }
 
-void *weak_ptr_create(void *ptr)
+static void *weak_ptr_create(void *ptr)
 {
     if (ptr == NULL) {
         return NULL;
@@ -45,7 +46,7 @@ void *weak_ptr_create(void *ptr)
     return ptr;
 }
 
-void weak_ptr_remove(void *ptr)
+static void weak_ptr_remove(void *ptr)
 {
    if (ptr == NULL) {
        return;
@@ -59,11 +60,11 @@ void weak_ptr_remove(void *ptr)
         return;
     }
    // No references left
-    void (*deallocator)(void *) = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
+    dealloc_handler_t deallocator = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
     deallocator(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *));
 }
 
-bool weak_ptr_dangling(void *ptr)
+static bool weak_ptr_dangling(void *ptr)
 {
     if (ptr == NULL) {
         return true;
@@ -72,7 +73,7 @@ bool weak_ptr_dangling(void *ptr)
 }
 
 // Shared pointer reference count
-size_t shared_ptr_count(void *ptr)
+static size_t shared_ptr_count(void *ptr)
 {
     if (ptr == NULL) {
         return 0;
@@ -81,7 +82,7 @@ size_t shared_ptr_count(void *ptr)
 }
 
 // Shared pointer weak reference count
-size_t shared_ptr_wcount(void *ptr)
+static size_t shared_ptr_wcount(void *ptr)
 {
     if (ptr == NULL) {
         return 0;
@@ -89,7 +90,7 @@ size_t shared_ptr_wcount(void *ptr)
     return GET_PTR_REF(size_t, ptr - sizeof(size_t) - sizeof(size_t));
 }
 
-void shared_ptr_free(void *ptr)
+static void shared_ptr_free(void *ptr)
 {
     if (ptr == NULL) {
         return;
@@ -107,12 +108,60 @@ void shared_ptr_free(void *ptr)
         return;
     }
     // No references left
-    void (*deallocator)(void *) = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
+    dealloc_handler_t deallocator = *((void **)(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *)));
     deallocator(ptr - sizeof(size_t) - sizeof(size_t) - sizeof(void *));
 }
 
+/* Pointers Abstraction Layer */
+shared_ptr_t pal_shared_ptr_alloc(const size_t len)
+{
+    shared_ptr_t sh_ptr;
+    sh_ptr.ptr = shared_ptr_alloc(len, malloc, free);
+    return sh_ptr;
+}
+shared_ptr_t pal_shared_ptr_copy(shared_ptr_t sh_ptr)
+{
+    shared_ptr_t sh_copy;
+    sh_copy.ptr = shared_ptr_copy(sh_ptr.ptr);
+    return sh_copy;
+}
+size_t pal_shared_ptr_count(shared_ptr_t sh_ptr)
+{
+    return shared_ptr_count(sh_ptr.ptr);
+}
+size_t pal_shared_ptr_wcount(shared_ptr_t sh_ptr)
+{
+    return shared_ptr_wcount(sh_ptr.ptr);
+}
+void pal_shared_ptr_free(shared_ptr_t *sh_ptr)
+{
+    if (sh_ptr -> ptr != NULL) {
+        shared_ptr_free(sh_ptr -> ptr);
+        sh_ptr -> ptr = NULL;
+    }
+}
+
+weak_ptr_t pal_weak_ptr_create(shared_ptr_t sh_ptr)
+{
+    weak_ptr_t w_ptr;
+    w_ptr.ptr = weak_ptr_create(sh_ptr.ptr);
+    return w_ptr;
+}
+
+bool pal_weak_ptr_dangling(weak_ptr_t w_ptr)
+{
+    return weak_ptr_dangling(w_ptr.ptr);
+}
+
+void pal_weak_ptr_remove(weak_ptr_t *w_ptr)
+{
+    if (w_ptr -> ptr != NULL) {
+        weak_ptr_remove(w_ptr -> ptr);
+        w_ptr -> ptr = NULL;
+    }
+}
 // Shared pointer initialization
-old_shared_ptr_t *old_shared_ptr_from_raw_ptr(void *raw_ptr, void (*dealloc_handler)(void *))
+old_shared_ptr_t *old_shared_ptr_from_raw_ptr(void *raw_ptr, dealloc_handler_t dealloc_handler)
 {
     if (raw_ptr == NULL)
     {
@@ -163,30 +212,6 @@ old_shared_ptr_t *old_shared_ptr_copy(old_shared_ptr_t *shared_ptr)
 }
 // Shared pointer degradation
 void *old_shared_ptr_to_raw_ptr(old_shared_ptr_t *shared_ptr)
-{
-    if (shared_ptr == NULL)
-    {
-        return NULL;
-    }
-    return shared_ptr -> target;
-}
-
-// Shared pointer copying
-shared_ptr_t *shared_ptr_copy(shared_ptr_t *shared_ptr)
-{
-    if (shared_ptr == NULL)
-    {
-        return NULL;
-    }
-    shared_ptr_t *copy = malloc(sizeof(shared_ptr_t));
-    copy -> target = shared_ptr -> target;
-    copy -> cb = shared_ptr -> cb;
-    ++(shared_ptr -> cb -> ref_count);
-    return copy;
-}
-
-// Shared pointer degradation
-void *shared_ptr_to_raw_ptr(shared_ptr_t *shared_ptr)
 {
     if (shared_ptr == NULL)
     {
