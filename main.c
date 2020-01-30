@@ -30,16 +30,17 @@ int main (int argh, char ** argv)
     //printf("Custom target is: %d\n", *((int *)shared_ptr_to_raw_ptr(custom_shared_ptr)));
     //shared_ptr_clean(&custom_shared_ptr);
 
-    int *sh_ptr = shared_ptr_default_alloc(sizeof(int));
-    *sh_ptr = 1024;
-    printf("The value of the shared pointer: %d\n", *sh_ptr);
-    int *other_sh_ptr = shared_ptr_copy(sh_ptr);
-    shared_ptr_free(sh_ptr); // sh_ptr is now invalid
-    int *weak_ptr = weak_ptr_create(sh_ptr);
-    printf("Weak pointer is dangling (y or n)? %c\n", weak_ptr_dangling(weak_ptr)? 'y' : 'n');
-    printf("The value of the shared pointer: %d\n", *sh_ptr);
-    shared_ptr_free(other_sh_ptr); // sh_ptr is now invalid
-    printf("Weak pointer is dangling (y or n)? %c\n", weak_ptr_dangling(weak_ptr)? 'y' : 'n');
+
+    shared_ptr_t sh_ptr = pal_shared_ptr_alloc(sizeof(int));
+    *(int*)sh_ptr.ptr = 1024;
+    printf("The value of the shared pointer: %d\n", *(int*)sh_ptr.ptr);
+    shared_ptr_t other_sh_ptr = pal_shared_ptr_copy(sh_ptr);
+    pal_shared_ptr_free(&sh_ptr); // sh_ptr is now invalid
+    weak_ptr_t weak_ptr = pal_weak_ptr_create(other_sh_ptr);
+    printf("Weak pointer is dangling (y or n)? %c\n", pal_weak_ptr_dangling(weak_ptr)? 'y' : 'n');
+    printf("The value of the shared pointer: %d\n", *(int*)other_sh_ptr.ptr);
+    pal_shared_ptr_free(&other_sh_ptr); // sh_ptr is now invalid
+    printf("Weak pointer is dangling (y or n)? %c\n", pal_weak_ptr_dangling(weak_ptr)? 'y' : 'n');
 
     return 0;
 }
